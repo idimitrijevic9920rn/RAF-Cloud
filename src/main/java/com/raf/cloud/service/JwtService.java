@@ -1,5 +1,6 @@
 package com.raf.cloud.service;
 
+import com.raf.cloud.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -25,7 +26,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails){
+    public String generateToken(User userDetails){
         return this.generateToken(new HashMap<>(), userDetails);
     }
 
