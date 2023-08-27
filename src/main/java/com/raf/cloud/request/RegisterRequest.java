@@ -20,6 +20,6 @@ public class RegisterRequest {
     private String email;
     private String username;
     private String password;
-    private List<Role> roles;
+//    private List<Role> roles;
 
 }
