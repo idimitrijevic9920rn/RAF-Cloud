@@ -1,5 +1,4 @@
-package com.raf.cloud.request;
-
+package com.raf.cloud.model;
 
 import com.raf.cloud.model.enums.Role;
 import lombok.AllArgsConstructor;
@@ -13,13 +12,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterRequest {
+public class UserInfo {
 
+    private Integer id;
     private String firstname;
     private String lastname;
-    private String email;
-    private String username;
-    private String password;
     private List<Role> roles;
+
 
 }

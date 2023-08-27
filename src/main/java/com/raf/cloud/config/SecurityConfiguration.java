@@ -1,6 +1,7 @@
 package com.raf.cloud.config;
 
 
+import com.raf.cloud.model.enums.Role;
 import com.raf.cloud.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,12 @@ public class SecurityConfiguration {
                 .csrf()
                 .disable()
                 .authorizeHttpRequests()
-                .requestMatchers(
-                        "/api/auth/**"
-                )
-                .permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+
+                .requestMatchers("/api/users/create/**").hasAuthority(Role.CAN_CREATE_USERS.toString())
+                .requestMatchers("/api/users/read/**").hasAuthority(Role.CAN_READ_USERS.toString())
+                .requestMatchers("/api/users/update/**").hasAuthority(Role.CAN_UPDATE_USERS.toString())
+                .requestMatchers("/api/users/delete/**").hasAuthority(Role.CAN_DELETE_USERS.toString())
 
                 .anyRequest()
                 .authenticated()
