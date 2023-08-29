@@ -33,9 +33,11 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private List<Role> roles;
 
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        for(Role role:roles){
+            System.out.println(role.name());
+        }
         return this.roles.stream()
                 .map(role -> new SimpleGrantedAuthority(role.name()))
                 .collect(Collectors.toList());

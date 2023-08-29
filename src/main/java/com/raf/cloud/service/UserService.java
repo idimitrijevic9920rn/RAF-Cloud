@@ -4,7 +4,6 @@ import com.raf.cloud.model.User;
 import com.raf.cloud.model.UserInfo;
 import com.raf.cloud.repository.UserRepository;
 import com.raf.cloud.request.RegisterRequest;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,7 +35,8 @@ public class UserService {
 
     public User updateUser(UserInfo userInfo){
         Optional<User> optionalUser = userRepository.findById(userInfo.getId());
-        if (!optionalUser.isPresent()) {
+        System.out.println(userInfo.getEmail());
+        if (optionalUser.isEmpty()) {
             return null;
         }
 
@@ -47,8 +47,8 @@ public class UserService {
         if (userInfo.getLastname() != null) {
             user.setLastname(userInfo.getLastname());
         }
-        if (userInfo.getRoles() != null) {
-            user.setRoles(userInfo.getRoles());
+        if (userInfo.getEmail() != null) {
+            user.setEmail(userInfo.getEmail());
         }
 
         return userRepository.save(user);
@@ -62,6 +62,13 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public User getById(Integer id){
+        Optional<User> user = userRepository.findById(id);
+        if(!user.isPresent()){
+            return null;
+        }
+        return user.get();
+    }
 
 
 

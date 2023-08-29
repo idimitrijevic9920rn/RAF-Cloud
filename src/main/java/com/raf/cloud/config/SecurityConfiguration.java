@@ -4,18 +4,16 @@ package com.raf.cloud.config;
 import com.raf.cloud.model.enums.Role;
 import com.raf.cloud.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 
 @Configuration
@@ -37,8 +35,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests()
                 .requestMatchers("/api/auth/**").permitAll()
 
-                .requestMatchers("/api/users/create/**").hasAuthority(Role.CAN_CREATE_USERS.toString())
-                .requestMatchers("/api/users/read/**").hasAuthority(Role.CAN_READ_USERS.toString())
+                .requestMatchers("/api/users/add/**").hasAuthority(Role.CAN_CREATE_USERS.toString())
+                .requestMatchers("/api/users/getAll/**").hasAuthority(Role.CAN_READ_USERS.toString())
                 .requestMatchers("/api/users/update/**").hasAuthority(Role.CAN_UPDATE_USERS.toString())
                 .requestMatchers("/api/users/delete/**").hasAuthority(Role.CAN_DELETE_USERS.toString())
 
@@ -48,10 +46,9 @@ public class SecurityConfiguration {
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(Customizer.withDefaults());
 
-        return http.build();
+        return http.addFilterBefore(this.jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class).build();
     }
 
 }
