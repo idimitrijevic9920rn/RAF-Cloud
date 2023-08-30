@@ -6,7 +6,6 @@ import com.raf.cloud.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,7 +22,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final AuthenticationProvider authenticationProvider;
 
 
     @Bean
@@ -34,11 +32,14 @@ public class SecurityConfiguration {
                 .disable()
                 .authorizeHttpRequests()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/machine/**").permitAll()
 
                 .requestMatchers("/api/users/add/**").hasAuthority(Role.CAN_CREATE_USERS.toString())
                 .requestMatchers("/api/users/getAll/**").hasAuthority(Role.CAN_READ_USERS.toString())
                 .requestMatchers("/api/users/update/**").hasAuthority(Role.CAN_UPDATE_USERS.toString())
                 .requestMatchers("/api/users/delete/**").hasAuthority(Role.CAN_DELETE_USERS.toString())
+
+
 
                 .anyRequest()
                 .authenticated()

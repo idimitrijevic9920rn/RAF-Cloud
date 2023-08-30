@@ -35,7 +35,6 @@ public class UserService {
 
     public User updateUser(UserInfo userInfo){
         Optional<User> optionalUser = userRepository.findById(userInfo.getId());
-        System.out.println(userInfo.getEmail());
         if (optionalUser.isEmpty()) {
             return null;
         }

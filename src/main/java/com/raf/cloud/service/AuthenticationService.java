@@ -37,10 +37,6 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request){
-        System.out.println(request.getUsername());
-        System.out.println(request.getPassword());
-
-        System.out.println(" \n ide");
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         var user = userRepository.findUserByUsername(request.getUsername()).orElseThrow();
         var token = jwtService.generateToken(user);
