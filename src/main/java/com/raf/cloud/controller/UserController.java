@@ -29,24 +29,24 @@ public class UserController {
     }
 
     @DeleteMapping(value = "/delete/{id}")
-    private ResponseEntity<?> deleteUser(@PathVariable("id") Integer id){
+    public ResponseEntity<?> deleteUser(@PathVariable("id") Integer id){
         userService.deleteUser(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PutMapping(value = "/update", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    private ResponseEntity<User> updateUser(@RequestBody UserInfo user){
+    public ResponseEntity<User> updateUser(@RequestBody UserInfo user){
         User updateUser = userService.updateUser(user);
         return new ResponseEntity<>(updateUser, HttpStatus.OK);
     }
 
     @GetMapping(value = "/getAll")
-    private ResponseEntity<List<User>> getRoles(){
+    public ResponseEntity<List<User>> getRoles(){
         return ResponseEntity.ok().body(userService.getAll());
     }
 
     @GetMapping(value = "/getById/{id}")
-    private ResponseEntity<User> getById(@PathVariable("id") Integer id){
+    public ResponseEntity<User> getById(@PathVariable("id") Integer id){
         return ResponseEntity.ok().body(userService.getById(id));
     }
 

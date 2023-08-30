@@ -31,6 +31,7 @@ public class MachineController {
     public ResponseEntity<?> restartMachine(@PathVariable Integer id) {
         return new ResponseEntity<>(machineService.restartMachine(id));
     }
+
     @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
     @PostMapping(value = "/start/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> startMachine(@PathVariable Integer id) {

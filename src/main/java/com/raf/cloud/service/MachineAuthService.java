@@ -5,6 +5,7 @@ import com.raf.cloud.model.User;
 import com.raf.cloud.repository.MachineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -22,7 +23,6 @@ public class MachineAuthService {
         }
 
         return false;
-
     }
 
 }

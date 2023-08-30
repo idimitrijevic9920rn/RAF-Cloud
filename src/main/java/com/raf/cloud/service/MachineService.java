@@ -45,6 +45,9 @@ public class MachineService {
             Optional<Machine> optionalMachine = machineRepository.findMachineById(id);
             if(optionalMachine.isPresent() && optionalMachine.get().getStatus().equals(Status.STOPPED)){
                 Machine machine = optionalMachine.get();
+                if(!machine.isActive()){
+                    return HttpStatus.CONFLICT;
+                }
                 machine.setActive(false);
                 return HttpStatus.OK;
             }
@@ -53,14 +56,14 @@ public class MachineService {
             this.destroyMachine(id);
         }
 
-        return HttpStatus.BAD_GATEWAY;
+        return HttpStatus.CONFLICT;
     }
 
     public HttpStatus restartMachine(Integer id) {
         Machine machine = this.findMachineById(id);
 
-        if (machine == null || machine.getStatus() != Status.RUNNING) {
-            return HttpStatus.BAD_GATEWAY;
+        if (machine == null || machine.getStatus() != Status.RUNNING || !machine.isActive()) {
+            return HttpStatus.CONFLICT;
         }
 
         new Thread(() -> restartMachineProcess(id)).start();
@@ -92,8 +95,10 @@ public class MachineService {
     public HttpStatus startMachine(Integer id){
         Machine machine = this.findMachineById(id);
 
-        if (machine == null || machine.getStatus() != Status.STOPPED) {
-            return HttpStatus.BAD_GATEWAY;
+        if (machine == null || machine.getStatus() != Status.STOPPED || !machine.isActive()) {
+            System.out.println(machine == null);
+            System.out.println(machine.getStatus() != Status.STOPPED);
+            return HttpStatus.CONFLICT;
         }
 
         new Thread(() -> startMachineProcess(id)).start();
@@ -111,7 +116,6 @@ public class MachineService {
         }catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ObjectOptimisticLockingFailureException e) {
-            System.out.println("ceka ipak");
             startMachineProcess(id);
         }
 
@@ -120,8 +124,8 @@ public class MachineService {
     public HttpStatus stopMachine(Integer id){
         Machine machine = this.findMachineById(id);
 
-        if (machine == null || machine.getStatus() != Status.RUNNING) {
-            return HttpStatus.BAD_GATEWAY;
+        if (machine == null || machine.getStatus() != Status.RUNNING || !machine.isActive()) {
+            return HttpStatus.CONFLICT;
         }
 
         new Thread(() -> stopMachineProcess(id)).start();
