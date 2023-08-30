@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class MachineRequest {
 
-    private Status status;
-    private boolean active;
+    private String name;
 
 }

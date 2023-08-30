@@ -39,6 +39,12 @@ public class SecurityConfiguration {
                 .requestMatchers("/api/users/update/**").hasAuthority(Role.CAN_UPDATE_USERS.toString())
                 .requestMatchers("/api/users/delete/**").hasAuthority(Role.CAN_DELETE_USERS.toString())
 
+//                .requestMatchers("/api/machine/create/**").hasAuthority(Role.CAN_CREATE_MACHINES.toString())
+//                .requestMatchers("/api/machine/restart/**").hasAuthority(Role.CAN_RESTART_MACHINES.toString())
+//                .requestMatchers("/api/machine/start/**").hasAuthority(Role.CAN_START_MACHINES.toString())
+//                .requestMatchers("/api/machine/destroy/**").hasAuthority(Role.CAN_DESTROY_MACHINES.toString())
+//                .requestMatchers("/api/machine/stop/**").hasAuthority(Role.CAN_STOP_MACHINES.toString())
+//                .requestMatchers("/api/machine/search/**").hasAuthority(Role.CAN_SEARCH_MACHINES.toString())
 
 
                 .anyRequest()

@@ -1,14 +1,14 @@
 package com.raf.cloud.controller;
 
 import com.raf.cloud.model.Machine;
-import com.raf.cloud.model.User;
-import com.raf.cloud.model.UserInfo;
+import com.raf.cloud.request.MachineRequest;
 import com.raf.cloud.service.MachineService;
-import com.raf.cloud.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,34 +19,39 @@ import java.util.List;
 @RequestMapping("/api/machine")
 public class MachineController {
 
-    private final UserService userService;
     private final MachineService machineService;
 
-    @PostMapping(value = "/create")
-    public Machine create(){
-        return machineService.addMachine();
+    @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Machine> create(@RequestBody MachineRequest machineRequest){
+        return new ResponseEntity<>(machineService.addMachine(machineRequest.getName()), HttpStatus.OK);
     }
 
+    @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
     @PostMapping(value = "/restart/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Machine> restartMachine(@PathVariable Integer id) {
+    public ResponseEntity<?> restartMachine(@PathVariable Integer id) {
         return new ResponseEntity<>(machineService.restartMachine(id));
     }
-
-    @DeleteMapping(value = "/delete/{id}")
-    private ResponseEntity<?> deleteUser(@PathVariable("id") Integer id){
-        userService.deleteUser(id);
-        return new ResponseEntity<>(HttpStatus.OK);
+    @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
+    @PostMapping(value = "/start/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> startMachine(@PathVariable Integer id) {
+        return new ResponseEntity<>(machineService.startMachine(id));
     }
 
-    @PutMapping(value = "/restart", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    private ResponseEntity<User> updateUser(@RequestBody UserInfo user){
-        User updateUser = userService.updateUser(user);
-        return new ResponseEntity<>(updateUser, HttpStatus.OK);
+    @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
+    @PostMapping(value = "/destroy/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> destroyMachine(@PathVariable Integer id) {
+        return new ResponseEntity<>(machineService.destroyMachine(id));
     }
+    @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
+    @PostMapping(value = "/stop/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> stopMachine(@PathVariable Integer id) {
+        return new ResponseEntity<>(machineService.stopMachine(id));
+    }
+
 
     @GetMapping(value = "/getAll")
-    private ResponseEntity<List<User>> getRoles(){
-        return ResponseEntity.ok().body(userService.getAll());
+    public ResponseEntity<List<Machine>> getMachines(){
+        return ResponseEntity.ok().body(machineService.getAll());
     }
 
 }

@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,11 +25,12 @@ public class MachineService {
     private final MachineRepository machineRepository;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    public Machine addMachine(){
+    public Machine addMachine(String name){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
 
         var machine = Machine.builder()
+                .name(name)
                 .status(Status.STOPPED)
                 .user(user)
                 .active(true)
@@ -37,17 +39,21 @@ public class MachineService {
         return machineRepository.save(machine);
     }
 
-    public Machine destroyMachine(Integer id){
-        Optional<Machine> optionalMachine = machineRepository.findMachineById(id);
-        if(optionalMachine.isPresent()){
-            Machine machine = optionalMachine.get();
-            if(machine.getStatus().equals(Status.STOPPED)){
+    public HttpStatus destroyMachine(Integer id){
+
+        try {
+            Optional<Machine> optionalMachine = machineRepository.findMachineById(id);
+            if(optionalMachine.isPresent() && optionalMachine.get().getStatus().equals(Status.STOPPED)){
+                Machine machine = optionalMachine.get();
                 machine.setActive(false);
-                return machine;
+                return HttpStatus.OK;
             }
-            return null;
+
+        } catch (ObjectOptimisticLockingFailureException exception){
+            this.destroyMachine(id);
         }
-        return null;
+
+        return HttpStatus.BAD_GATEWAY;
     }
 
     public HttpStatus restartMachine(Integer id) {
@@ -83,8 +89,63 @@ public class MachineService {
         }
     }
 
+    public HttpStatus startMachine(Integer id){
+        Machine machine = this.findMachineById(id);
 
+        if (machine == null || machine.getStatus() != Status.STOPPED) {
+            return HttpStatus.BAD_GATEWAY;
+        }
 
+        new Thread(() -> startMachineProcess(id)).start();
+        return HttpStatus.OK;
+    }
+
+    private void startMachineProcess(Integer id){
+        try {
+            Machine machine = this.findMachineById(id);
+
+            machine.setStatus(Status.RUNNING);
+            Thread.sleep(10000);
+            machineRepository.save(machine);
+
+        }catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ObjectOptimisticLockingFailureException e) {
+            System.out.println("ceka ipak");
+            startMachineProcess(id);
+        }
+
+    }
+
+    public HttpStatus stopMachine(Integer id){
+        Machine machine = this.findMachineById(id);
+
+        if (machine == null || machine.getStatus() != Status.RUNNING) {
+            return HttpStatus.BAD_GATEWAY;
+        }
+
+        new Thread(() -> stopMachineProcess(id)).start();
+        return HttpStatus.OK;
+    }
+
+    private void stopMachineProcess(Integer id){
+        try {
+            Machine machine = findMachineById(id);
+            machine.setStatus(Status.STOPPED);
+            Thread.sleep(10000);
+            machineRepository.save(machine);
+
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }catch (ObjectOptimisticLockingFailureException e){
+            stopMachineProcess(id);
+        }
+    }
+
+    public List<Machine> getAll(){
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return machineRepository.findByUser_Id(user.getId());
+    }
 
     private Machine findMachineById(Integer id){
         Optional<Machine> optionalMachine = machineRepository.findMachineById(id);

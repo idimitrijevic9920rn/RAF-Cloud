@@ -20,6 +20,8 @@ public class Machine {
     @GeneratedValue
     private Integer id;
 
+    private String name;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
