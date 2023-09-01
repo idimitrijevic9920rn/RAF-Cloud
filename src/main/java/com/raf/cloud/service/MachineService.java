@@ -7,6 +7,7 @@ import com.raf.cloud.repository.MachineRepository;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,6 +25,8 @@ public class MachineService {
 
     private final MachineRepository machineRepository;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     public Machine addMachine(String name){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -49,6 +52,7 @@ public class MachineService {
                     return HttpStatus.CONFLICT;
                 }
                 machine.setActive(false);
+                machineRepository.save(machine);
                 return HttpStatus.OK;
             }
 
@@ -113,6 +117,8 @@ public class MachineService {
             Thread.sleep(10000);
             machineRepository.save(machine);
 
+            simpMessagingTemplate.convertAndSend("/topic/machine-status", machine);
+
         }catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ObjectOptimisticLockingFailureException e) {
@@ -155,6 +161,7 @@ public class MachineService {
         Optional<Machine> optionalMachine = machineRepository.findMachineById(id);
         return optionalMachine.orElse(null);
     }
+
 
 
 }

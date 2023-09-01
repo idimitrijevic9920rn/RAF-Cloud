@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,8 @@ import java.util.List;
 public class MachineController {
 
     private final MachineService machineService;
+
+    private final SimpMessagingTemplate template;
 
     @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Machine> create(@RequestBody MachineRequest machineRequest){
@@ -43,6 +46,7 @@ public class MachineController {
     public ResponseEntity<?> destroyMachine(@PathVariable Integer id) {
         return new ResponseEntity<>(machineService.destroyMachine(id));
     }
+
     @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
     @PostMapping(value = "/stop/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> stopMachine(@PathVariable Integer id) {
@@ -55,4 +59,8 @@ public class MachineController {
         return ResponseEntity.ok().body(machineService.getAll());
     }
 
+
+    public void notifyFrontend(String machineStatus, Integer machineId) {
+        this.template.convertAndSend("/topic/machine/" + machineId, machineStatus);
+    }
 }
