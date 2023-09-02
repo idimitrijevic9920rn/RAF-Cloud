@@ -1,7 +1,9 @@
 package com.raf.cloud.service;
 
+import com.raf.cloud.config.ErrorMessage;
 import com.raf.cloud.model.Machine;
 import com.raf.cloud.model.User;
+import com.raf.cloud.model.enums.MachineOperation;
 import com.raf.cloud.model.enums.Status;
 import com.raf.cloud.repository.MachineRepository;
 import lombok.Builder;
@@ -13,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -27,6 +30,7 @@ public class MachineService {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final ErrorService errorService;
 
     public Machine addMachine(String name){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -44,10 +48,10 @@ public class MachineService {
 
     public HttpStatus destroyMachine(Integer id){
 
+        Machine machine = findMachineById(id);
+
         try {
-            Optional<Machine> optionalMachine = machineRepository.findMachineById(id);
-            if(optionalMachine.isPresent() && optionalMachine.get().getStatus().equals(Status.STOPPED)){
-                Machine machine = optionalMachine.get();
+            if(machine.getStatus().equals(Status.STOPPED)){
                 if(!machine.isActive()){
                     return HttpStatus.CONFLICT;
                 }
@@ -57,7 +61,7 @@ public class MachineService {
             }
 
         } catch (ObjectOptimisticLockingFailureException exception){
-            this.destroyMachine(id);
+            errorService.saveError(MachineOperation.DESTROY, ErrorMessage.destroyMessage, machine, getloggedUser());
         }
 
         return HttpStatus.CONFLICT;
@@ -70,29 +74,32 @@ public class MachineService {
             return HttpStatus.CONFLICT;
         }
 
-        new Thread(() -> restartMachineProcess(id)).start();
+        User user = getloggedUser();
+        new Thread(() -> restartMachineProcess(id, user)).start();
 
         return HttpStatus.OK;
     }
 
-    private void restartMachineProcess(Integer id) {
+    private void restartMachineProcess(Integer id, User user) {
+
+        Machine machine = this.findMachineById(id);
+
         try {
-            Machine machine = this.findMachineById(id);
             Thread.sleep(5000);
 
             machine.setStatus(Status.STOPPED);
-            machineRepository.save(machine);
+            notifyFrontend(machine);
 
             Thread.sleep(5000);
 
-            machine = this.findMachineById(id);
             machine.setStatus(Status.RUNNING);
             machineRepository.save(machine);
+            notifyFrontend(machine);
 
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ObjectOptimisticLockingFailureException e) {
-            restartMachineProcess(id);
+            errorService.saveError(MachineOperation.RESTART, ErrorMessage.restartMessage, machine, user);
         }
     }
 
@@ -100,29 +107,30 @@ public class MachineService {
         Machine machine = this.findMachineById(id);
 
         if (machine == null || machine.getStatus() != Status.STOPPED || !machine.isActive()) {
-            System.out.println(machine == null);
-            System.out.println(machine.getStatus() != Status.STOPPED);
             return HttpStatus.CONFLICT;
         }
 
-        new Thread(() -> startMachineProcess(id)).start();
+        User user = getloggedUser();
+
+        new Thread(() -> startMachineProcess(id, user)).start();
         return HttpStatus.OK;
     }
 
-    private void startMachineProcess(Integer id){
-        try {
-            Machine machine = this.findMachineById(id);
+    private void startMachineProcess(Integer id, User user){
 
+        Machine machine = this.findMachineById(id);
+
+        try {
             machine.setStatus(Status.RUNNING);
             Thread.sleep(10000);
             machineRepository.save(machine);
 
-            simpMessagingTemplate.convertAndSend("/topic/machine-status", machine);
+            notifyFrontend(machine);
 
         }catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ObjectOptimisticLockingFailureException e) {
-            startMachineProcess(id);
+            errorService.saveError(MachineOperation.START, ErrorMessage.startMessage, machine, user);
         }
 
     }
@@ -134,32 +142,50 @@ public class MachineService {
             return HttpStatus.CONFLICT;
         }
 
-        new Thread(() -> stopMachineProcess(id)).start();
+        User user = getloggedUser();
+        new Thread(() -> stopMachineProcess(id, user)).start();
         return HttpStatus.OK;
     }
 
-    private void stopMachineProcess(Integer id){
+    private void stopMachineProcess(Integer id, User user){
+        Machine machine = findMachineById(id);
+
         try {
-            Machine machine = findMachineById(id);
             machine.setStatus(Status.STOPPED);
             Thread.sleep(10000);
             machineRepository.save(machine);
+            notifyFrontend(machine);
 
         }catch (InterruptedException e){
             e.printStackTrace();
         }catch (ObjectOptimisticLockingFailureException e){
-            stopMachineProcess(id);
+            errorService.saveError(MachineOperation.STOP, ErrorMessage.stopMessage, machine, user);
         }
     }
 
-    public List<Machine> getAll(){
+    public List<Machine> filter(String name, Status status, LocalDate dateFrom, LocalDate dateTo){
+
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        return this.machineRepository.filterMachines(name, status, dateFrom, dateTo, user.getId());
+    }
+
+    public List<Machine> getAll(){
+        User user = getloggedUser();
         return machineRepository.findByUser_Id(user.getId());
     }
 
     private Machine findMachineById(Integer id){
         Optional<Machine> optionalMachine = machineRepository.findMachineById(id);
         return optionalMachine.orElse(null);
+    }
+
+    private void notifyFrontend(Machine machine){
+        simpMessagingTemplate.convertAndSend("/topic/machine-status", machine);
+    }
+
+    private User getloggedUser(){
+        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
 

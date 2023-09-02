@@ -33,6 +33,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/machine/**").permitAll()
+                .requestMatchers("/api/error/**").permitAll()
 
                 .requestMatchers("/api/users/add/**").hasAuthority(Role.CAN_CREATE_USERS.toString())
                 .requestMatchers("/api/users/getAll/**").hasAuthority(Role.CAN_READ_USERS.toString())

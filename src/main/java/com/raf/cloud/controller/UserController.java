@@ -22,7 +22,6 @@ public class UserController {
 
     private final UserService userService;
 
-
     @PostMapping(value = "/add", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public User createUser(@RequestBody RegisterRequest user){
         return userService.addUser(user);
