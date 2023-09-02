@@ -16,10 +16,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Builder
@@ -31,6 +31,8 @@ public class MachineService {
 
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final ErrorService errorService;
+
+    private final UserService userService;
 
     public Machine addMachine(String name){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -67,15 +69,19 @@ public class MachineService {
         return HttpStatus.CONFLICT;
     }
 
-    public HttpStatus restartMachine(Integer id) {
+    public HttpStatus restartMachine(Integer id, User user) {
         Machine machine = this.findMachineById(id);
 
         if (machine == null || machine.getStatus() != Status.RUNNING || !machine.isActive()) {
             return HttpStatus.CONFLICT;
         }
 
-        User user = getloggedUser();
-        new Thread(() -> restartMachineProcess(id, user)).start();
+        if(user == null){
+            user = getloggedUser();
+        }
+
+        User finalUser = user;
+        new Thread(() -> restartMachineProcess(id, finalUser)).start();
 
         return HttpStatus.OK;
     }
@@ -103,22 +109,26 @@ public class MachineService {
         }
     }
 
-    public HttpStatus startMachine(Integer id){
+    public HttpStatus startMachine(Integer id, User user){
         Machine machine = this.findMachineById(id);
 
         if (machine == null || machine.getStatus() != Status.STOPPED || !machine.isActive()) {
             return HttpStatus.CONFLICT;
         }
 
-        User user = getloggedUser();
+        if(user == null){
+            user = getloggedUser();
+        }
 
-        new Thread(() -> startMachineProcess(id, user)).start();
+        User finalUser = user;
+        new Thread(() -> startMachineProcess(id, finalUser)).start();
         return HttpStatus.OK;
     }
 
     private void startMachineProcess(Integer id, User user){
 
         Machine machine = this.findMachineById(id);
+
 
         try {
             machine.setStatus(Status.RUNNING);
@@ -135,15 +145,19 @@ public class MachineService {
 
     }
 
-    public HttpStatus stopMachine(Integer id){
+    public HttpStatus stopMachine(Integer id, User user){
         Machine machine = this.findMachineById(id);
 
         if (machine == null || machine.getStatus() != Status.RUNNING || !machine.isActive()) {
             return HttpStatus.CONFLICT;
         }
 
-        User user = getloggedUser();
-        new Thread(() -> stopMachineProcess(id, user)).start();
+        if(user == null){
+            user = getloggedUser();
+        }
+
+        User finalUser = user;
+        new Thread(() -> stopMachineProcess(id, finalUser)).start();
         return HttpStatus.OK;
     }
 
@@ -164,10 +178,22 @@ public class MachineService {
     }
 
     public List<Machine> filter(String name, Status status, LocalDate dateFrom, LocalDate dateTo){
-
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
+        User user = getloggedUser();
         return this.machineRepository.filterMachines(name, status, dateFrom, dateTo, user.getId());
+    }
+
+    public HttpStatus scheduleTask(Integer id, MachineOperation operation, Date date) {
+        long delay = date.getTime() - System.currentTimeMillis();
+        User user = getloggedUser();
+        scheduler.schedule(() -> {
+            switch (operation) {
+                case START -> startMachine(id, user);
+                case STOP -> stopMachine(id, user);
+                case RESTART -> restartMachine(id, user);
+            }
+        }, delay, TimeUnit.MILLISECONDS);
+
+        return HttpStatus.OK;
     }
 
     public List<Machine> getAll(){

@@ -1,5 +1,6 @@
 package com.raf.cloud.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.raf.cloud.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,6 +28,7 @@ public class User implements UserDetails {
     private String lastname;
     private String email;
     private String username;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)

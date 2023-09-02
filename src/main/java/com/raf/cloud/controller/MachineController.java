@@ -3,6 +3,7 @@ package com.raf.cloud.controller;
 import com.raf.cloud.model.Machine;
 import com.raf.cloud.model.enums.Status;
 import com.raf.cloud.request.MachineRequest;
+import com.raf.cloud.request.ScheduleRequest;
 import com.raf.cloud.service.MachineService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -31,13 +32,13 @@ public class MachineController {
     @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
     @PostMapping(value = "/restart/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> restartMachine(@PathVariable Integer id) {
-        return new ResponseEntity<>(machineService.restartMachine(id));
+        return new ResponseEntity<>(machineService.restartMachine(id, null));
     }
 
     @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
     @PostMapping(value = "/start/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> startMachine(@PathVariable Integer id) {
-        return new ResponseEntity<>(machineService.startMachine(id));
+        return new ResponseEntity<>(machineService.startMachine(id, null));
     }
 
     @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
@@ -49,7 +50,7 @@ public class MachineController {
     @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#id)")
     @PostMapping(value = "/stop/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> stopMachine(@PathVariable Integer id) {
-        return new ResponseEntity<>(machineService.stopMachine(id));
+        return new ResponseEntity<>(machineService.stopMachine(id, null));
     }
 
     @GetMapping(value = "/getAll")
@@ -68,6 +69,12 @@ public class MachineController {
     }
 
 
+    @PostMapping(value = "/schedule", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("@machineAuthService.isUserAuthorizedToModifyMachine(#request.id)")
+    public ResponseEntity<?> scheduleTask(@RequestBody ScheduleRequest request){
+
+        return ResponseEntity.ok(machineService.scheduleTask(request.getId(), request.getOperation(), request.getDate()));
+    }
 
 
 
